@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Meridian Group — Corporate Simulator</title>
+<style>
+:root{
+  --bg:#f4f3ee; --panel:#fff; --panel2:#fbfaf6; --border:#d6d4cb; --border2:#e4e2d9;
+  --text:#1a1d22; --dim:#5e6570; --muted:#8b919a;
+  --navy:#1e3a5f; --navy-light:#e9eef4; --navy-mid:#4a6d96;
+  --green:#2a6b3f; --green-light:#e8f2eb;
+  --red:#9c2f3c; --red-light:#f7e9eb;
+  --amber:#8f6b00; --amber-light:#faf4dc;
+  --mono:'SF Mono','Menlo','Consolas','Courier New',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:-apple-system,'Segoe UI','Inter',Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+#app{height:100vh;display:flex;flex-direction:column}
+
+/* ── Top bar ─────────────────────────────────── */
+.topbar{
+  display:flex;align-items:center;gap:24px;
+  padding:0 22px;height:56px;flex:0 0 56px;
+  background:var(--panel);border-bottom:1px solid var(--border);
+}
+.brand{display:flex;flex-direction:column;line-height:1.15}
+.brand-name{font-weight:700;letter-spacing:1.5px;font-size:13px;color:var(--navy)}
+.brand-sub{font-size:9.5px;letter-spacing:1.8px;color:var(--muted);text-transform:uppercase}
+.top-center{flex:1;display:flex;gap:32px;align-items:center}
+.top-stat{display:flex;flex-direction:column;line-height:1.2}
+.top-stat .label{font-size:9.5px;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase}
+.top-stat .val{font-size:15px;font-weight:600;font-family:var(--mono);color:var(--text)}
+.top-stat .val.neg{color:var(--red)}
+.top-stat .val.pos{color:var(--green)}
+.controls{display:flex;gap:6px}
+
+/* ── Layout ──────────────────────────────────── */
+.main{flex:1;display:flex;overflow:hidden;min-height:0}
+.sidebar{
+  width:196px;flex:0 0 196px;background:var(--panel2);
+  border-right:1px solid var(--border);padding:14px 0;overflow-y:auto;
+}
+.nav-section{
+  font-size:9.5px;letter-spacing:1.5px;color:var(--muted);
+  padding:14px 20px 6px;text-transform:uppercase;font-weight:600;
+}
+.nav-btn{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;padding:7px 20px;background:none;border:none;
+  font-family:inherit;font-size:12.5px;color:var(--text);
+  text-align:left;cursor:pointer;border-left:2px solid transparent;
+  transition:background .1s;
+}
+.nav-btn:hover{background:#f0eee7}
+.nav-btn.active{background:var(--navy-light);border-left-color:var(--navy);color:var(--navy);font-weight:600}
+.nav-badge{
+  background:var(--red);color:#fff;font-size:10px;font-weight:700;
+  padding:1px 6px;border-radius:9px;min-width:18px;text-align:center;
+}
+.nav-badge.zero{display:none}
+
+.content{flex:1;overflow-y:auto;padding:24px 28px;min-width:0}
+.content::-webkit-scrollbar{width:10px}
+.content::-webkit-scrollbar-thumb{background:#c8c5bb;border-radius:5px;border:2px solid var(--bg)}
+.content::-webkit-scrollbar-track{background:transparent}
+
+/* ── Typography ──────────────────────────────── */
+h1{font-size:22px;font-weight:700;letter-spacing:-.3px;margin-bottom:4px}
+h2{font-size:15px;font-weight:700;letter-spacing:.2px;margin:22px 0 12px;color:var(--navy)}
+h3{font-size:13px;font-weight:700;letter-spacing:.2px;margin:16px 0 8px;color:var(--text)}
+.subtitle{color:var(--dim);font-size:12.5px;margin-bottom:20px}
+.mono{font-family:var(--mono)}
+.dim{color:var(--dim)} .muted{color:var(--muted)}
+.green{color:var(--green)} .red{color:var(--red)}
+.text-right{text-align:right}
+
+/* ── Buttons ─────────────────────────────────── */
+button{
+  font-family:inherit;font-size:12px;cursor:pointer;
+  background:var(--panel);color:var(--text);
+  border:1px solid var(--border);border-radius:4px;
+  padding:6px 12px;transition:all .1s;
+}
+button:hover:not(:disabled){background:#f0eee7;border-color:#bbb8ae}
+button:disabled{opacity:.35;cursor:not-allowed}
+button.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+button.primary:hover:not(:disabled){background:#152c4a;border-color:#152c4a}
+button.danger{color:var(--red);border-color:#d4b8bc}
+button.danger:hover:not(:disabled){background:var(--red-light)}
+button.sm{font-size:11px;padding:4px 9px}
+
+/* ── Cards / panels ──────────────────────────── */
+.card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:6px;padding:16px 18px;margin-bottom:14px;
+}
+.card-title{
+  font-size:11px;letter-spacing:1.2px;color:var(--muted);
+  text-transform:uppercase;font-weight:600;margin-bottom:10px;
+}
+.kv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+.kv{display:flex;flex-direction:column;line-height:1.3}
+.kv .lbl{font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+.kv .val{font-size:18px;font-weight:600;font-family:var(--mono);margin-top:2px}
+.kv .val.neg{color:var(--red)}
+.kv .val.pos{color:var(--green)}
+
+/* ── Entity cards ────────────────────────────── */
+.entity-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.entity-card{
+  background:var(--panel);border:1px solid var(--border);border-radius:6px;
+  padding:14px 16px;cursor:pointer;transition:all .12s;
+}
+.entity-card:hover{border-color:var(--navy-mid);box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.entity-card .name{font-weight:700;font-size:13.5px;margin-bottom:2px}
+.entity-card .type{font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase}
+.entity-card .metrics{
+  display:flex;gap:20px;margin-top:12px;padding-top:10px;
+  border-top:1px solid var(--border2);
+}
+.entity-card .metric{display:flex;flex-direction:column;line-height:1.2}
+.entity-card .metric .lbl{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+.entity-card .metric .val{font-family:var(--mono);font-size:13px;font-weight:600;margin-top:1px}
+
+/* ── Tables ──────────────────────────────────── */
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{
+  text-align:left;font-weight:600;font-size:10.5px;letter-spacing:1px;
+  color:var(--muted);text-transform:uppercase;
+  padding:8px 10px;border-bottom:1px solid var(--border);background:var(--panel2);
+}
+th.num,td.num{text-align:right;font-family:var(--mono)}
+td{padding:6px 10px;border-bottom:1px solid var(--border2)}
+tr:last-child td{border-bottom:none}
+tr.total td{font-weight:700;border-top:1.5px solid var(--border);border-bottom:none;padding-top:9px}
+tr.subtotal td{font-weight:600;border-top:1px solid var(--border2);padding-top:8px}
+tr:hover td{background:#faf9f5}
+
+/* ── Statements ──────────────────────────────── */
+.stmt{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:6px;padding:20px 22px;margin-bottom:14px;max-width:780px;
+}
+.stmt-head{margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.stmt-title{font-size:14px;font-weight:700;letter-spacing:.3px}
+.stmt-sub{font-size:11px;color:var(--dim);margin-top:3px}
+.stmt-section{margin-top:16px;margin-bottom:6px;font-size:11px;letter-spacing:1.2px;
+  text-transform:uppercase;font-weight:700;color:var(--navy)}
+
+/* ── Documents ───────────────────────────────── */
+.doc{
+  background:var(--panel);border:1px solid var(--border);
+  border-left:3px solid var(--border);border-radius:4px;
+  padding:14px 16px;margin-bottom:10px;
+}
+.doc.unread{border-left-color:var(--navy);background:#fdfcf8}
+.doc.decision{border-left-color:var(--amber)}
+.doc.warn{border-left-color:var(--red)}
+.doc-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;gap:12px}
+.doc-title{font-weight:600;font-size:13px}
+.doc-date{font-size:11px;color:var(--muted);font-family:var(--mono);white-space:nowrap}
+.doc-body{color:var(--dim);font-size:12.5px;line-height:1.55}
+.doc-actions{display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border2)}
+.doc-type{font-size:9.5px;letter-spacing:1.2px;color:var(--muted);text-transform:uppercase;font-weight:600}
+
+/* ── Tabs ────────────────────────────────────── */
+.tabs{display:flex;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--border)}
+.tab{
+  padding:8px 14px;background:none;border:none;border-bottom:2px solid transparent;
+  font-family:inherit;font-size:12.5px;color:var(--dim);cursor:pointer;font-weight:500;
+}
+.tab.active{color:var(--navy);border-bottom-color:var(--navy);font-weight:600}
+.tab:hover:not(.active){color:var(--text)}
+
+/* ── Activity feed ──────────────────────────── */
+.feed{background:var(--panel);border:1px solid var(--border);border-radius:6px;
+  max-height:240px;overflow-y:auto}
+.feed-item{padding:8px 14px;border-bottom:1px solid var(--border2);font-size:12px;
+  display:flex;gap:12px;align-items:flex-start}
+.feed-item:last-child{border-bottom:none}
+.feed-date{color:var(--muted);font-family:var(--mono);font-size:10.5px;flex:0 0 78px;padding-top:1px}
+.feed-text{flex:1;color:var(--text)}
+.feed-text.good{color:var(--green)} .feed-text.bad{color:var(--red)} .feed-text.warn{color:var(--amber)}
+
+/* ── Forms ──────────────────────────────────── */
+.form-row{display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.form-row label{flex:0 0 130px;font-size:12px;color:var(--dim)}
+.form-row select,.form-row input{
+  font-family:inherit;font-size:12px;padding:5px 8px;
+  border:1px solid var(--border);border-radius:4px;background:var(--panel);
+  color:var(--text);
+}
+.form-row select:focus,.form-row input:focus{outline:none;border-color:var(--navy-mid)}
+
+/* ── Empty state ────────────────────────────── */
+.empty{
+  padding:40px 20px;text-align:center;color:var(--muted);
+  font-size:12.5px;background:var(--panel);
+  border:1px dashed var(--border);border-radius:6px;
+}
+
+/* ── Overlay / End screen ───────────────────── */
+.overlay{
+  position:fixed;inset:0;background:rgba(20,25,35,.72);
+  display:none;align-items:center;justify-content:center;z-index:100;
+}
+.overlay.show{display:flex}
+.overlay-card{
+  background:var(--panel);border-radius:8px;padding:32px 40px;
+  max-width:560px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.3);
+}
+.overlay-card h1{margin-bottom:6px}
+.overlay-card .sub{color:var(--dim);margin-bottom:22px}
+.overlay-stats{display:grid;grid-template-columns:1fr auto;gap:6px 24px;margin-bottom:22px}
+.overlay-stats .lbl{color:var(--dim)}
+.overlay-stats .val{font-family:var(--mono);font-weight:600;text-align:right}
+.overlay-card button{margin-top:8px}
+
+/* ── Misc ───────────────────────────────────── */
+.divider{height:1px;background:var(--border);margin:16px 0}
+.flex-between{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.tag{display:inline-block;font-size:10px;letter-spacing:.8px;text-transform:uppercase;
+  padding:2px 7px;border-radius:3px;font-weight:600}
+.tag.opco{background:var(--navy-light);color:var(--navy)}
+.tag.holding{background:#f0ede4;color:#7a6a3f}
+.pill{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;
+  background:var(--panel2);border:1px solid var(--border);font-family:var(--mono)}
+.pill.green{background:var(--green-light);border-color:#c5dccb;color:var(--green)}
+.pill.red{background:var(--red-light);border-color:#e0c4c9;color:var(--red)}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-name">MERIDIAN GROUP</div>
+      <div class="brand-sub">Corporate Operations</div>
+    </div>
+    <div class="top-center">
+      <div class="top-stat"><span class="label">Date</span><span class="val" id="topDate">—</span></div>
+      <div class="top-stat"><span class="label">Group Cash</span><span class="val" id="topCash">—</span></div>
+      <div class="top-stat"><span class="label">YTD Net Income</span><span class="val" id="topPL">—</span></div>
+      <div class="top-stat"><span class="label">Entities</span><span class="val" id="topEntities">—</span></div>
+    </div>
+    <div class="controls">
+      <button id="bDay">+1d</button>
+      <button id="bWeek">+1w</button>
+      <button id="bMonth">+1m</button>
+      <button id="bAuto" class="primary">▶ Auto</button>
+    </div>
+  </header>
+  <div class="main">
+    <nav class="sidebar" id="sidebar">
+      <div class="nav-section">Group</div>
+      <button class="nav-btn active" data-screen="overview">Overview</button>
+      <button class="nav-btn" data-screen="entities">Companies</button>
+      <div class="nav-section">Analysis</div>
+      <button class="nav-btn" data-screen="finance">Financials</button>
+      <button class="nav-btn" data-screen="people">People</button>
+      <div class="nav-section">Operations</div>
+      <button class="nav-btn" data-screen="inbox">Inbox <span class="nav-badge zero" id="navInbox">0</span></button>
+      <button class="nav-btn" data-screen="market">Capital Markets</button>
+      <button class="nav-btn" data-screen="actions">Actions</button>
+    </nav>
+    <main class="content" id="content"></main>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-card" id="overlayCard"></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════════════════════
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+function pad(n){ return String(n).padStart(2,'0'); }
+function addDays(d,n){
+  const dt = new Date(d.y, d.m-1, d.d);
+  dt.setDate(dt.getDate()+n);
+  return {y:dt.getFullYear(), m:dt.getMonth()+1, d:dt.getDate()};
+}
+function isBiz(d){
+  const dow = new Date(d.y, d.m-1, d.d).getDay();
+  return dow !== 0 && dow !== 6;
+}
+function nextBiz(d){
+  let x = addDays(d,1);
+  while(!isBiz(x)) x = addDays(x,1);
+  return x;
+}
+function fmtDate(d){
+  const dt = new Date(d.y, d.m-1, d.d);
+  return `${DOW[dt.getDay()]}, ${MON[d.m-1]} ${d.d}, ${d.y}`;
+}
+function fmtDateShort(d){ return `${MON[d.m-1]} ${d.d}`; }
+function fmtDateMed(d){ return `${MON[d.m-1]} ${d.d}, ${d.y}`; }
+function dateNum(d){ return d.y*10000 + d.m*100 + d.d; }
+function dateLE(a,b){ return dateNum(a) <= dateNum(b); }
+function dateLT(a,b){ return dateNum(a) < dateNum(b); }
+function dateGE(a,b){ return dateNum(a) >= dateNum(b); }
+function sameMonth(a,b){ return a.y===b.y && a.m===b.m; }
+function sameYear(a,b){ return a.y===b.y; }
+
+function fm(n){
+  if(n === null || n === undefined) return '—';
+  const neg = n < 0;
+  const abs = Math.abs(Math.round(n));
+  const s = abs.toLocaleString('en-US');
+  return (neg?'−$':'$') + s;
+}
+function fn(n){
+  if(n === null || n === undefined) return '—';
+  const neg = n < 0;
+  const abs = Math.abs(Math.round(n));
+  return (neg?'−':'') + abs.toLocaleString('en-US');
+}
+function pct(n){ return (n*100).toFixed(1) + '%'; }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function firstBizOfMonth(d){
+  if(!isBiz(d)) return false;
+  let p = addDays(d,-1);
+  while(!isBiz(p)) p = addDays(p,-1);
+  return p.m !== d.m;
+}
+function lastBizOfMonth(d){
+  if(!isBiz(d)) return false;
+  let n = addDays(d,1);
+  while(!isBiz(n)) n = addDays(n,1);
+  return n.m !== d.m;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  CHART OF ACCOUNTS
+// ═══════════════════════════════════════════════════════════════
+const ACC = {
+  '1000':{name:'Cash',                 type:'asset'},
+  '1100':{name:'Accounts Receivable',  type:'asset'},
+  '1200':{name:'Inventory',            type:'asset'},
+  '1400':{name:'Investment in Subs',   type:'asset'},
+  '1500':{name:'Equipment',            type:'asset'},
+  '1510':{name:'Accum. Depreciation',  type:'contra-asset'},
+  '2000':{name:'Accounts Payable',     type:'liability'},
+  '2200':{name:'Bank Loans',           type:'liability'},
+  '3000':{name:'Common Stock',         type:'equity'},
+  '3200':{name:'Dividends',            type:'contra-equity'},
+  '4000':{name:'Revenue',              type:'revenue'},
+  '4100':{name:'Dividend Income',      type:'revenue'},
+  '5000':{name:'Cost of Goods Sold',   type:'expense'},
+  '6000':{name:'Salaries',             type:'expense'},
+  '6600':{name:'Payroll Taxes',        type:'expense'},
+  '6100':{name:'Rent',                 type:'expense'},
+  '6200':{name:'Utilities',            type:'expense'},
+  '6300':{name:'Marketing',            type:'expense'},
+  '6400':{name:'Professional Fees',    type:'expense'},
+  '6500':{name:'Depreciation',         type:'expense'},
+  '7000':{name:'Interest Expense',     type:'expense'},
+  '8000':{name:'Income Tax',           type:'expense'},
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════════
+const S = {
+  date:{y:2024,m:1,d:2},
+  entities:[],
+  nextId:1,
+  screen:'overview',
+  selectedEntity:null,
+  selectedDoc:null,
+  docs:[],
+  feed:[],
+  paused:false,
+  autoTimer:null,
+  gameOver:false,
+  gameOverReason:null,
+  campaignEnd:{y:2026,m:12,d:31},
+  finTab:'pl',
+  peopleEntity:null,
+  lastMonthSeen:null,
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  ACCOUNTING
+// ═══════════════════════════════════════════════════════════════
+function post(entity, memo, lines){
+  const je = {id:'JE'+S.nextId++, date:{...S.date}, memo, lines};
+  let dr = 0, cr = 0;
+  for(const l of lines){ dr += (l.debit||0); cr += (l.credit||0); }
+  if(Math.abs(dr-cr) > 0.01){
+    console.warn('Unbalanced JE', je, dr, cr);
+    return null;
+  }
+  entity.ledger.push(je);
+  return je;
+}
+function bal(entity, code, from, to){
+  let b = 0;
+  for(const je of entity.ledger){
+    if(from && !dateGE(je.date, from)) continue;
+    if(to && !dateLE(je.date, to)) continue;
+    for(const l of je.lines){
+      if(l.account === code) b += (l.debit||0) - (l.credit||0);
+    }
+  }
+  return b;
+}
+function entityCash(e){ return bal(e, '1000'); }
+
+function getPL(entity, from, to){
+  const lines = {};
+  let rev = 0, cogs = 0, opex = {};
+  const EXPCODES = ['5000','6000','6600','6100','6200','6300','6400','6500','7000','8000'];
+  const REVCODES = ['4000','4100'];
+  for(const je of entity.ledger){
+    if(from && !dateGE(je.date, from)) continue;
+    if(to && !dateLE(je.date, to)) continue;
+    for(const l of je.lines){
+      if(REVCODES.includes(l.account)){
+        rev += (l.credit||0) - (l.debit||0);
+      } else if(EXPCODES.includes(l.account)){
+        const amt = (l.debit||0) - (l.credit||0);
+        if(l.account === '5000') cogs += amt;
+        else opex[l.account] = (opex[l.account]||0) + amt;
+      }
+    }
+  }
+  const opexTotal = Object.values(opex).reduce((a,b)=>a+b,0);
+  return {revenue:rev, cogs, grossProfit:rev-cogs, opex, opexTotal, netIncome:rev-cogs-opexTotal};
+}
+
+function getBS(entity, asOf){
+  const assets = {
+    '1000':bal(entity,'1000',null,asOf),
+    '1100':bal(entity,'1100',null,asOf),
+    '1200':bal(entity,'1200',null,asOf),
+    '1400':bal(entity,'1400',null,asOf),
+    '1500':bal(entity,'1500',null,asOf),
+    '1510':bal(entity,'1510',null,asOf),
+  };
+  const liabs = {
+    '2000':-bal(entity,'2000',null,asOf),
+    '2200':-bal(entity,'2200',null,asOf),
+  };
+  const commonStock = -bal(entity,'3000',null,asOf);
+  const dividends = bal(entity,'3200',null,asOf);
+  const plAll = getPL(entity, null, asOf);
+  const retained = plAll.netIncome - dividends;
+  const totalAssets = assets['1000']+assets['1100']+assets['1200']+assets['1400']+assets['1500']+assets['1510'];
+  const totalLiabs = Object.values(liabs).reduce((a,b)=>a+b,0);
+  const totalEquity = commonStock + retained;
+  return {assets, liabs, commonStock, retained, totalAssets, totalLiabs, totalEquity};
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ENTITY HELPERS
+// ═══════════════════════════════════════════════════════════════
+function newEntity(opts){
+  const e = {
+    id:'E'+S.nextId++,
+    name:opts.name,
+    type:opts.type,
+    industry:opts.industry || null,
+    parentId:opts.parentId || null,
+    ownership:opts.ownership ?? 1.0,
+    ledger:[],
+    employees:[],
+    customers:[],
+    suppliers:[],
+    ar:[],
+    ap:[],
+    loans:[],
+    marketingBudget:0,
+    simplified:opts.simplified || null, // {revenue, costs, dividendPolicy}
+    foundedDate:{...S.date},
+  };
+  S.entities.push(e);
+  return e;
+}
+function getEntity(id){ return S.entities.find(e=>e.id===id); }
+function opcos(){ return S.entities.filter(e=>e.type==='opco'); }
+function holding(){ return S.entities.find(e=>e.type==='holding'); }
+function groupCash(){ return S.entities.reduce((s,e)=>s+entityCash(e),0); }
+
+// ═══════════════════════════════════════════════════════════════
+//  INITIAL SETUP
+// ═══════════════════════════════════════════════════════════════
+function setupCompany(){
+  // ── HoldCo ─────────────────────────────────
+  const hc = newEntity({name:'Meridian Holdings Ltd', type:'holding'});
+  hc.ledger.push({
+    id:'JE'+S.nextId++, date:{y:2024,m:1,d:2}, memo:'Shareholder capital contribution',
+    lines:[{account:'1000',debit:800000},{account:'3000',credit:800000}]
+  });
+
+  // ── OpCo ───────────────────────────────────
+  const op = newEntity({name:'Meridian Coffee Roasters Ltd', type:'opco', industry:'coffee', parentId:hc.id});
+  op.ledger.push({
+    id:'JE'+S.nextId++, date:{y:2024,m:1,d:2}, memo:'Capital contribution from parent',
+    lines:[{account:'1000',debit:650000},{account:'3000',credit:650000}]
+  });
+  op.ledger.push({
+    id:'JE'+S.nextId++, date:{y:2024,m:1,d:2}, memo:'Equipment purchase — roaster + packaging line',
+    lines:[{account:'1500',debit:100000},{account:'1000',credit:100000}]
+  });
+  op.ledger.push({
+    id:'JE'+S.nextId++, date:{y:2024,m:1,d:2}, memo:'Initial green coffee + packaging inventory',
+    lines:[{account:'1200',debit:50000},{account:'1000',credit:50000}]
+  });
+
+  // HoldCo investment in OpCo
+  hc.ledger.push({
+    id:'JE'+S.nextId++, date:{y:2024,m:1,d:2}, memo:'Investment in Meridian Coffee Roasters',
+    lines:[{account:'1400',debit:650000},{account:'1000',credit:650000}]
+  });
+
+  // OpCo employees
+  const emps = [
+    {name:'Anika Rasmussen', role:'Head Roaster',          salary:58000},
+    {name:'Tomas Bell',      role:'Production Assistant',  salary:38000},
+    {name:'Priya Shah',      role:'Sales Manager',         salary:62000},
+    {name:'Owen Foster',     role:'Sales Rep',             salary:45000},
+    {name:'Lena Kowalski',   role:'Operations Manager',    salary:60000},
+    {name:'Marcus Webb',     role:'Bookkeeper',            salary:45000},
+    {name:'Sofia Mendez',    role:'Packer',                salary:32000},
+  ];
+  for(const e of emps){
+    op.employees.push({id:'P'+S.nextId++, ...e, startDate:{y:2024,m:1,d:2}});
+  }
+
+  // OpCo customers
+  const customers = [
+    {name:'Café Aurora',       monthly:20000, terms:30, cogsPct:0.30, status:'active'},
+    {name:'The Percolator',    monthly:14000, terms:30, cogsPct:0.30, status:'active'},
+    {name:'Brew & Co.',        monthly:22000, terms:45, cogsPct:0.28, status:'active'},
+    {name:'Kaffeehaus Nord',   monthly:9000,  terms:30, cogsPct:0.32, status:'active'},
+    {name:'Rosetta Bakery',    monthly:10000, terms:15, cogsPct:0.30, status:'active'},
+  ];
+  for(const c of customers){
+    op.customers.push({id:'C'+S.nextId++, ...c});
+  }
+
+  // Suppliers
+  op.suppliers.push({id:'S'+S.nextId++, name:'Yirgacheffe Traders', category:'Green Coffee', terms:30});
+  op.suppliers.push({id:'S'+S.nextId++, name:'Pacific Packaging Co.', category:'Packaging', terms:15});
+  op.suppliers.push({id:'S'+S.nextId++, name:'Cascade Freight', category:'Logistics', terms:30});
+
+  // Set inventory target
+  op.inventoryTarget = 60000;
+
+  // ── Initial sales for January ────────────────
+  processSales(op, true);
+  processRent(op);
+
+  // ── Welcome document ─────────────────────────
+  S.docs.unshift({
+    id:'D'+S.nextId++, date:{...S.date}, type:'tutorial', unread:true, kind:'info',
+    title:'Welcome to Meridian Group',
+    body:`You control Meridian Holdings and its subsidiary, Meridian Coffee Roasters. The group has ${fm(groupCash())} in cash.
+
+Your job: grow the group's value over three years. Use +1d/+1w/+1m to advance the calendar, or Auto to run continuously. Review the Inbox for notices and decisions. Financials shows statements per entity.
+
+The coffee roastery is roughly break-even at current scale. To grow: hire sales staff, run sales pushes, or acquire targets in Capital Markets.`,
+    resolved:false,
+  });
+
+  addFeed('Group formed. Coffee roastery operational.', 'good');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SIMULATION — SALES, COLLECTIONS, PAYMENTS, PAYROLL
+// ═══════════════════════════════════════════════════════════════
+function processSales(e, initial){
+  if(e.simplified) return;
+  for(const c of e.customers){
+    if(c.status !== 'active') continue;
+    // Monthly revenue with slight variance
+    const variance = 0.94 + Math.random()*0.12;
+    const amount = Math.round(c.monthly * variance);
+    const cogs = Math.round(amount * c.cogsPct);
+
+    post(e, `Invoice — ${c.name}`, [
+      {account:'1100', debit:amount},
+      {account:'4000', credit:amount},
+      {account:'5000', debit:cogs},
+      {account:'1200', credit:cogs},
+    ]);
+
+    e.ar.push({
+      id:'AR'+S.nextId++,
+      customer:c.name,
+      amount,
+      invoiced:{...S.date},
+      due:addDays(S.date, c.terms),
+      status:'open',
+    });
+  }
+
+  // Replenish inventory if low
+  const inv = bal(e, '1200');
+  if(inv < e.inventoryTarget){
+    const needed = e.inventoryTarget - inv;
+    post(e, 'Purchase order — inventory', [
+      {account:'1200', debit:needed},
+      {account:'2000', credit:needed},
+    ]);
+    e.ap.push({
+      id:'AP'+S.nextId++,
+      supplier:'Yirgacheffe Traders',
+      amount:needed,
+      received:{...S.date},
+      due:addDays(S.date, 30),
+      status:'open',
+    });
+  }
+}
+
+function processCollections(e){
+  if(e.simplified) return;
+  for(const ar of e.ar){
+    if(ar.status !== 'open') continue;
+    if(dateGE(S.date, ar.due)){
+      // Late chance
+      const lateness = Math.random();
+      if(lateness < 0.04){
+        ar.due = addDays(ar.due, 30);
+        ar.lateCount = (ar.lateCount||0)+1;
+        if(ar.lateCount === 1){
+          addDoc({
+            type:'notice', kind:'warn',
+            title:`Late payment: ${ar.customer}`,
+            body:`Invoice for ${fm(ar.amount)} from ${ar.customer} was due ${fmtDateMed(ar.due)}. They have requested a 30-day extension. Net-30 terms are stretched to Net-60.`,
+          });
+        }
+        continue;
+      }
+      post(e, `Collection — ${ar.customer}`, [
+        {account:'1000', debit:ar.amount},
+        {account:'1100', credit:ar.amount},
+      ]);
+      ar.status = 'paid';
+    }
+  }
+  // Write off severely overdue
+  for(const ar of e.ar){
+    if(ar.status !== 'open') continue;
+    const days = Math.floor((dateNum(S.date)-dateNum(ar.due))/10000*365 + (S.date.m-ar.due.m)*30 + (S.date.d-ar.due.d));
+    if(days > 120){
+      post(e, `Bad debt writeoff — ${ar.customer}`, [
+        {account:'6400', debit:ar.amount},
+        {account:'1100', credit:ar.amount},
+      ]);
+      ar.status = 'written-off';
+      addDoc({
+        type:'notice', kind:'warn',
+        title:`Bad debt: ${ar.customer}`,
+        body:`Invoice for ${fm(ar.amount)} has been outstanding over 120 days. Written off as bad debt.`,
+      });
+    }
+  }
+}
+
+function processPayments(e){
+  if(e.simplified) return;
+  for(const ap of e.ap){
+    if(ap.status !== 'open') continue;
+    if(dateGE(S.date, ap.due)){
+      post(e, `Payment — ${ap.supplier}`, [
+        {account:'2000', debit:ap.amount},
+        {account:'1000', credit:ap.amount},
+      ]);
+      ap.status = 'paid';
+    }
+  }
+}
+
+function processPayroll(e){
+  if(e.simplified) return;
+  if(e.employees.length === 0) return;
+  const totalSalary = e.employees.reduce((s,emp)=>s+emp.salary,0);
+  const monthly = Math.round(totalSalary/12);
+  const taxes = Math.round(monthly * 0.25);
+
+  if(entityCash(e) < monthly + taxes){
+    addDoc({
+      type:'decision', kind:'warn',
+      title:`PAYROLL SHORTFALL — ${e.name}`,
+      body:`Insufficient cash to meet payroll of ${fm(monthly+taxes)}. Cash on hand: ${fm(entityCash(e))}. Options: transfer from parent company (if available), or miss payroll.`,
+      options:[
+        {label:'Transfer from HoldCo', action:'rescue-payroll', entityId:e.id, amount:monthly+taxes},
+        {label:'Defer payroll (unpaid wages)', action:'defer-payroll', entityId:e.id},
+      ],
+    });
+  }
+
+  post(e, 'Monthly payroll', [
+    {account:'6000', debit:monthly},
+    {account:'6600', debit:taxes},
+    {account:'1000', credit:monthly+taxes},
+  ]);
+}
+
+function processRent(e){
+  if(e.simplified) return;
+  post(e, 'Monthly rent', [
+    {account:'6100', debit:4500},
+    {account:'1000', credit:4500},
+  ]);
+}
+
+function processUtilities(e){
+  if(e.simplified) return;
+  post(e, 'Monthly utilities', [
+    {account:'6200', debit:800},
+    {account:'1000', credit:800},
+  ]);
+}
+
+function processDepreciation(e){
+  if(e.simplified) return;
+  const equip = bal(e, '1500');
+  if(equip > 0){
+    const dep = Math.round(equip/120);
+    post(e, 'Monthly depreciation', [
+      {account:'6500', debit:dep},
+      {account:'1510', credit:dep},
+    ]);
+  }
+}
+
+function processSimplified(e){
+  if(!e.simplified) return;
+  const rev = e.simplified.revenue;
+  const costs = e.simplified.costs;
+  post(e, 'Monthly operations', [
+    {account:'1000', debit:rev},
+    {account:'4000', credit:rev},
+    {account:'5000', debit:costs},
+    {account:'1000', credit:costs},
+  ]);
+  // Dividend distribution to parent
+  const net = rev - costs;
+  if(net > 0 && e.simplified.dividendPolicy > 0){
+    const dividend = Math.round(net * e.simplified.dividendPolicy);
+    if(dividend > 0){
+      post(e, 'Dividend to parent', [
+        {account:'3200', debit:dividend},
+        {account:'1000', credit:dividend},
+      ]);
+      const parent = getEntity(e.parentId);
+      if(parent){
+        post(parent, `Dividend from ${e.name}`, [
+          {account:'1000', debit:dividend},
+          {account:'4100', credit:dividend},
+        ]);
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EVENTS
+// ═══════════════════════════════════════════════════════════════
+function randomEvents(){
+  for(const e of opcos()){
+    if(e.simplified) continue;
+
+    // Employee resignation
+    if(e.employees.length > 0 && Math.random() < 0.006){
+      const idx = Math.floor(Math.random() * e.employees.length);
+      const emp = e.employees[idx];
+      e.employees.splice(idx, 1);
+      addDoc({
+        type:'notice', kind:'warn',
+        title:`Resignation: ${emp.name}`,
+        body:`${emp.name} (${emp.role}) has submitted their resignation, effective in 2 weeks. Salary: ${fm(emp.salary)}/year.`,
+        options:[{label:'Acknowledge', action:'dismiss-doc'}],
+      });
+      addFeed(`${emp.name} resigned from ${e.name}.`, 'warn');
+    }
+
+    // Customer churn
+    if(Math.random() < 0.008){
+      const active = e.customers.filter(c=>c.status==='active');
+      if(active.length > 1){
+        const c = active[Math.floor(Math.random()*active.length)];
+        c.status = 'churned';
+        addDoc({
+          type:'notice', kind:'warn',
+          title:`Contract lost: ${c.name}`,
+          body:`${c.name} has ended their wholesale agreement. Monthly revenue impact: ${fm(c.monthly)}.`,
+        });
+        addFeed(`Lost customer: ${c.name} (${fm(c.monthly)}/mo)`, 'bad');
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MAIN TICK
+// ═══════════════════════════════════════════════════════════════
+function tickDay(){
+  if(S.gameOver) return;
+  S.date = nextBiz(S.date);
+
+  const firstBiz = firstBizOfMonth(S.date);
+  const lastBiz = lastBizOfMonth(S.date);
+  const day15 = S.date.d === 15;
+  const day5 = S.date.d === 5;
+
+  for(const e of S.entities){
+    if(e.type === 'holding') continue;
+
+    if(e.simplified){
+      if(firstBiz) processSimplified(e);
+      continue;
+    }
+
+    if(firstBiz){
+      processSales(e);
+      processRent(e);
+    }
+    if(day15) processUtilities(e);
+    if(day5 && e.marketingBudget > 0){
+      post(e, 'Marketing campaign', [
+        {account:'6300', debit:e.marketingBudget},
+        {account:'1000', credit:e.marketingBudget},
+      ]);
+    }
+    if(lastBiz){
+      processPayroll(e);
+      processDepreciation(e);
+    }
+
+    processCollections(e);
+    processPayments(e);
+  }
+
+  randomEvents();
+
+  // Monthly close document
+  if(lastBiz){
+    monthlySummaryDocs();
+  }
+
+  // Check bankruptcy
+  if(groupCash() < -100000){
+    endGame('INSOLVENCY', 'The group has exhausted its credit. Creditors have filed for administration.');
+  }
+
+  // Check campaign end
+  if(dateGE(S.date, S.campaignEnd)){
+    endGame('CAMPAIGN COMPLETE', 'You have reached the end of the three-year period.');
+  }
+
+  render();
+}
+
+function monthlySummaryDocs(){
+  const hc = holding();
+  for(const e of opcos()){
+    if(e.simplified) continue;
+    const pl = getPL(e, {y:S.date.y, m:S.date.m, d:1}, S.date);
+    addFeed(`${e.name}: ${fm(pl.revenue)} revenue, ${fm(pl.netIncome)} net income`, pl.netIncome>=0?'good':'bad');
+  }
+}
+
+function addFeed(text, kind){
+  S.feed.unshift({date:{...S.date}, text, kind});
+  if(S.feed.length > 80) S.feed.pop();
+}
+
+function addDoc(doc){
+  doc.id = 'D' + S.nextId++;
+  doc.date = {...S.date};
+  doc.unread = true;
+  if(doc.resolved === undefined) doc.resolved = false;
+  S.docs.unshift(doc);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  ACTIONS (HIRE, FIRE, SALES, ACQUIRE, ETC.)
+// ═══════════════════════════════════════════════════════════════
+const ROLES = {
+  'Roaster':55000,
+  'Production Assistant':38000,
+  'Sales Rep':45000,
+  'Packer':32000,
+  'Bookkeeper':45000,
+  'Operations Manager':65000,
+  'Barista':36000,
+  'Store Manager':52000,
+};
+
+function hireEmployee(entityId, role){
+  const e = getEntity(entityId);
+  if(!e) return;
+  const salary = ROLES[role];
+  e.employees.push({
+    id:'P'+S.nextId++,
+    name:randomName(),
+    role,
+    salary,
+    startDate:{...S.date},
+  });
+  addFeed(`Hired ${role} at ${e.name} — ${fm(salary)}/yr`, 'good');
+  render();
+}
+
+function fireEmployee(entityId, empId){
+  const e = getEntity(entityId);
+  const idx = e.employees.findIndex(x=>x.id===empId);
+  if(idx === -1) return;
+  const emp = e.employees[idx];
+  e.employees.splice(idx, 1);
+  const severance = Math.round(emp.salary/12);
+  post(e, `Severance — ${emp.name}`, [
+    {account:'6000', debit:severance},
+    {account:'1000', credit:severance},
+  ]);
+  addFeed(`Terminated ${emp.name} (${emp.role}). Severance ${fm(severance)}`, 'warn');
+  render();
+}
+
+function runSalesPush(entityId){
+  const e = getEntity(entityId);
+  if(!e) return;
+  const cost = 4000;
+  if(entityCash(e) < cost){ addFeed('Insufficient cash for sales push', 'warn'); render(); return; }
+  post(e, 'Sales development expense', [
+    {account:'6300', debit:cost},
+    {account:'1000', credit:cost},
+  ]);
+  const salesReps = e.employees.filter(emp => ['Sales Rep','Sales Manager'].includes(emp.role)).length;
+  const chance = 0.20 + salesReps * 0.12;
+  if(Math.random() < chance){
+    const newCustomer = generateCustomer();
+    e.customers.push(newCustomer);
+    addFeed(`Won new account: ${newCustomer.name} (${fm(newCustomer.monthly)}/mo)`, 'good');
+    addDoc({
+      type:'notice', kind:'info',
+      title:`New account signed: ${newCustomer.name}`,
+      body:`Terms: ${fmtDateMed(S.date)}, monthly revenue ${fm(newCustomer.monthly)}, Net-${newCustomer.terms}.`,
+    });
+  } else {
+    addFeed('Sales push completed — no new account signed', 'warn');
+  }
+  render();
+}
+
+function generateCustomer(){
+  const names = ['Bramble Coffee','Third Wave Ltd','Northern Roast','Juniper Kitchen','The Grind','Urban Filter','Morningside Café','Riverside Coffee'];
+  return {
+    id:'C'+S.nextId++,
+    name:names[Math.floor(Math.random()*names.length)] + ' #' + (100+Math.floor(Math.random()*900)),
+    monthly: 4000 + Math.floor(Math.random()*12000),
+    terms: [15,30,45][Math.floor(Math.random()*3)],
+    cogsPct: 0.28 + Math.random()*0.06,
+    status:'active',
+  };
+}
+
+function randomName(){
+  const first = ['Alex','Blake','Casey','Dana','Ellis','Finn','Gwen','Harper','Ira','Jamie','Kai','Logan','Mia','Nico','Olive','Parker','Quinn','Reese','Sage','Tara'];
+  const last = ['Adams','Brooks','Carter','Diaz','Ellis','Fischer','Garcia','Hayes','Ivanov','Jensen','Kim','Lopez','Morgan','Nguyen','Ortiz','Patel','Quinn','Reyes','Sato','Torres'];
+  return first[Math.floor(Math.random()*first.length)] + ' ' + last[Math.floor(Math.random()*last.length)];
+}
+
+function takeLoan(entityId, amount){
+  const e = getEntity(entityId);
+  if(!e) return;
+  const rate = 0.08;
+  post(e, `Bank loan — ${fm(amount)} at ${pct(rate)}`, [
+    {account:'1000', debit:amount},
+    {account:'2200', credit:amount},
+  ]);
+  e.loans.push({amount, rate, taken:{...S.date}});
+  addFeed(`Loan drawn: ${fm(amount)} at ${pct(rate)}`, 'good');
+  render();
+}
+
+function payDividend(entityId, amount){
+  const e = getEntity(entityId);
+  if(!e) return;
+  if(entityCash(e) < amount){ addFeed('Insufficient cash for dividend', 'warn'); render(); return; }
+  post(e, 'Dividend paid to parent', [
+    {account:'3200', debit:amount},
+    {account:'1000', credit:amount},
+  ]);
+  const parent = getEntity(e.parentId);
+  if(parent){
+    post(parent, `Dividend from ${e.name}`, [
+      {account:'1000', debit:amount},
+      {account:'4100', credit:amount},
+    ]);
+  }
+  addFeed(`Dividend paid: ${fm(amount)}`, 'good');
+  render();
+}
+
+function acquireCompany(targetIdx){
+  const target = MARKET.targets[targetIdx];
+  if(!target || target.acquired) return;
+  const hc = holding();
+  if(entityCash(hc) < target.price){ addFeed('Insufficient cash for acquisition', 'warn'); render(); return; }
+  post(hc, `Acquisition — ${target.name}`, [
+    {account:'1400', debit:target.price},
+    {account:'1000', credit:target.price},
+  ]);
+  const newEntity = newEntity({
+    name:target.name, type:'opco', industry:target.industry, parentId:hc.id,
+    simplified:{
+      revenue:target.monthlyRevenue,
+      costs:target.monthlyCosts,
+      dividendPolicy:0.85,
+    }
+  });
+  newEntity.ledger.push({
+    id:'JE'+S.nextId++, date:{...S.date}, memo:'Initial capital (from acquisition)',
+    lines:[{account:'1000',debit:target.price},{account:'3000',credit:target.price}]
+  });
+  target.acquired = true;
+  addFeed(`Acquired ${target.name} for ${fm(target.price)}`, 'good');
+  addDoc({
+    type:'notice', kind:'info',
+    title:`Acquisition complete: ${target.name}`,
+    body:`Purchased for ${fm(target.price)}. Monthly revenue: ${fm(target.monthlyRevenue)}, monthly costs: ${fm(target.monthlyCosts)}. Dividend policy: 85% to parent.`,
+  });
+  render();
+}
+
+function foundCompany(kind){
+  const hc = holding();
+  const specs = {
+    cafe:{name:'Meridian Café', cost:150000, monthlyRevenue:30000, monthlyCosts:24000, industry:'retail'},
+    consulting:{name:'Meridian Consulting', cost:50000, monthlyRevenue:18000, monthlyCosts:14000, industry:'services'},
+    bakery:{name:'Meridian Bakery', cost:200000, monthlyRevenue:40000, monthlyCosts:31000, industry:'food'},
+  };
+  const spec = specs[kind];
+  if(!spec) return;
+  if(entityCash(hc) < spec.cost){ addFeed('Insufficient cash', 'warn'); render(); return; }
+  post(hc, `Formation of ${spec.name}`, [
+    {account:'1400', debit:spec.cost},
+    {account:'1000', credit:spec.cost},
+  ]);
+  const newEntity = newEntity({
+    name:spec.name, type:'opco', industry:spec.industry, parentId:hc.id,
+    simplified:{
+      revenue:spec.monthlyRevenue,
+      costs:spec.monthlyCosts,
+      dividendPolicy:0.80,
+    }
+  });
+  newEntity.ledger.push({
+    id:'JE'+S.nextId++, date:{...S.date}, memo:'Initial capital',
+    lines:[{account:'1000',debit:spec.cost},{account:'3000',credit:spec.cost}]
+  });
+  addFeed(`Founded ${spec.name} for ${fm(spec.cost)}`, 'good');
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  MARKET — ACQUISITION TARGETS
+// ═══════════════════════════════════════════════════════════════
+const MARKET = {
+  targets:[
+    {name:'Rosetta Bakery & Café', industry:'retail', price:200000, monthlyRevenue:52000, monthlyCosts:47000, description:'Neighborhood bakery with café operations. Stable foot traffic.', acquired:false},
+    {name:'Northside Logistics Co.', industry:'logistics', price:550000, monthlyRevenue:110000, monthlyCosts:95000, description:'Regional freight and last-mile delivery. Contract-driven revenue.', acquired:false},
+    {name:'Cascade Tea Company', industry:'wholesale', price:150000, monthlyRevenue:34000, monthlyCosts:30000, description:'Specialty tea wholesaler with retail distribution.', acquired:false},
+    {name:'Green Valley Farms', industry:'agriculture', price:800000, monthlyRevenue:180000, monthlyCosts:160000, description:'Coffee farm and processing operation. Vertical integration play.', acquired:false},
+  ],
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  END GAME
+// ═══════════════════════════════════════════════════════════════
+function endGame(reason, message){
+  S.gameOver = true;
+  S.paused = true;
+  if(S.autoTimer){ clearInterval(S.autoTimer); S.autoTimer = null; }
+  const hc = holding();
+  const bs = getBS(hc, S.date);
+  const totalAssets = S.entities.reduce((s,e)=>s+getBS(e,S.date).totalAssets,0);
+  const totalLiabs = S.entities.reduce((s,e)=>s+getBS(e,S.date).totalLiabs,0);
+  const equity = totalAssets - totalLiabs;
+  const cards = `
+    <h1>${esc(reason)}</h1>
+    <div class="sub">${esc(message)}</div>
+    <div class="overlay-stats">
+      <div class="lbl">Group cash</div><div class="val">${fm(groupCash())}</div>
+      <div class="lbl">Combined assets</div><div class="val">${fm(totalAssets)}</div>
+      <div class="lbl">Combined liabilities</div><div class="val">${fm(totalLiabs)}</div>
+      <div class="lbl">Shareholder equity</div><div class="val">${fm(equity)}</div>
+      <div class="lbl">Entities</div><div class="val">${S.entities.length}</div>
+      <div class="lbl">Employees</div><div class="val">${S.entities.reduce((s,e)=>s+e.employees.length,0)}</div>
+    </div>
+    <button class="primary" onclick="location.reload()">New Game</button>
+  `;
+  document.getElementById('overlayCard').innerHTML = cards;
+  document.getElementById('overlay').classList.add('show');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  RENDERING
+// ═══════════════════════════════════════════════════════════════
+function render(){
+  // Top bar
+  document.getElementById('topDate').textContent = fmtDate(S.date);
+  const cash = groupCash();
+  const cashEl = document.getElementById('topCash');
+  cashEl.textContent = fm(cash);
+  cashEl.className = 'val ' + (cash < 0 ? 'neg' : '');
+
+  // YTD net income
+  let ytd = 0;
+  for(const e of S.entities){
+    const pl = getPL(e, {y:S.date.y, m:1, d:1}, S.date);
+    ytd += pl.netIncome;
+  }
+  const plEl = document.getElementById('topPL');
+  plEl.textContent = fm(ytd);
+  plEl.className = 'val ' + (ytd < 0 ? 'neg' : (ytd > 0 ? 'pos' : ''));
+
+  document.getElementById('topEntities').textContent = S.entities.length;
+
+  // Inbox badge
+  const unread = S.docs.filter(d => !d.resolved).length;
+  const badge = document.getElementById('navInbox');
+  badge.textContent = unread;
+  badge.className = 'nav-badge' + (unread === 0 ? ' zero' : '');
+
+  // Content
+  const content = document.getElementById('content');
+  switch(S.screen){
+    case 'overview': content.innerHTML = renderOverview(); break;
+    case 'entities': content.innerHTML = renderEntities(); break;
+    case 'finance': content.innerHTML = renderFinance(); break;
+    case 'people': content.innerHTML = renderPeople(); break;
+    case 'inbox': content.innerHTML = renderInbox(); break;
+    case 'market': content.innerHTML = renderMarket(); break;
+    case 'actions': content.innerHTML = renderActions(); break;
+  }
+  bindEvents();
+}
+
+// ── Overview ────────────────────────────────────
+function renderOverview(){
+  const hc = holding();
+  const opList = opcos();
+  const totalCash = groupCash();
+  let ytdRev = 0, ytdNet = 0;
+  for(const e of S.entities){
+    const pl = getPL(e, {y:S.date.y, m:1, d:1}, S.date);
+    ytdRev += pl.revenue;
+    ytdNet += pl.netIncome;
+  }
+
+  let html = `<h1>Overview</h1><div class="subtitle">${fmtDate(S.date)} · Year ${S.date.y - 2023} of 3</div>`;
+
+  html += `<div class="card"><div class="kv-grid">
+    <div class="kv"><span class="lbl">Group Cash</span><span class="val ${totalCash<0?'neg':''}">${fm(totalCash)}</span></div>
+    <div class="kv"><span class="lbl">YTD Revenue</span><span class="val">${fm(ytdRev)}</span></div>
+    <div class="kv"><span class="lbl">YTD Net Income</span><span class="val ${ytdNet<0?'neg':'pos'}">${fm(ytdNet)}</span></div>
+    <div class="kv"><span class="lbl">Operating Companies</span><span class="val">${opList.length}</span></div>
+    <div class="kv"><span class="lbl">Total Employees</span><span class="val">${S.entities.reduce((s,e)=>s+e.employees.length,0)}</span></div>
+  </div></div>`;
+
+  html += `<h2>Companies</h2><div class="entity-grid">`;
+  for(const e of S.entities){
+    const cash = entityCash(e);
+    const plYtd = getPL(e, {y:S.date.y, m:1, d:1}, S.date);
+    const plMonth = getPL(e, {y:S.date.y, m:S.date.m, d:1}, S.date);
+    html += `<div class="entity-card" data-entity="${e.id}">
+      <div class="flex-between">
+        <div>
+          <div class="name">${esc(e.name)}</div>
+          <div class="type">${e.type === 'holding' ? 'Holding Company' : esc(e.industry || 'Operating')}</div>
+        </div>
+        <span class="tag ${e.type}">${e.type === 'holding' ? 'HOLD' : 'OPCO'}</span>
+      </div>
+      <div class="metrics">
+        <div class="metric"><span class="lbl">Cash</span><span class="val ${cash<0?'neg':''}">${fm(cash)}</span></div>
+        <div class="metric"><span class="lbl">YTD Rev</span><span class="val">${fm(plYtd.revenue)}</span></div>
+        <div class="metric"><span class="lbl">YTD Net</span><span class="val ${plYtd.netIncome<0?'neg':'pos'}">${fm(plYtd.netIncome)}</span></div>
+      </div>
+    </div>`;
+  }
+  html += `</div>`;
+
+  html += `<h2>Recent Activity</h2><div class="feed">`;
+  if(S.feed.length === 0){
+    html += `<div class="feed-item"><span class="feed-text dim">No activity yet.</span></div>`;
+  } else {
+    for(const f of S.feed.slice(0,12)){
+      html += `<div class="feed-item">
+        <span class="feed-date">${fmtDateShort(f.date)}</span>
+        <span class="feed-text ${f.kind||''}">${esc(f.text)}</span>
+      </div>`;
+    }
+  }
+  html += `</div>`;
+
+  return html;
+}
+
+// ── Entities ────────────────────────────────────
+function renderEntities(){
+  let html = `<h1>Companies</h1><div class="subtitle">All entities in the group. Click to select for financials.</div>`;
+  for(const e of S.entities){
+    const bs = getBS(e, S.date);
+    const plYtd = getPL(e, {y:S.date.y, m:1, d:1}, S.date);
+    html += `<div class="card" data-entity="${e.id}" style="cursor:pointer">
+      <div class="flex-between">
+        <div>
+          <div style="font-weight:700;font-size:14px">${esc(e.name)}</div>
+          <div class="dim" style="font-size:12px;margin-top:2px">${e.type==='holding'?'Holding Company':'Operating · '+esc(e.industry||'—')} · Founded ${fmtDateMed(e.foundedDate)}</div>
+        </div>
+        <span class="tag ${e.type}">${e.type==='holding'?'HOLD':'OPCO'}</span>
+      </div>
+      <div class="kv-grid" style="margin-top:14px">
+        <div class="kv"><span class="lbl">Cash</span><span class="val ${entityCash(e)<0?'neg':''}">${fm(entityCash(e))}</span></div>
+        <div class="kv"><span class="lbl">Total Assets</span><span class="val">${fm(bs.totalAssets)}</span></div>
+        <div class="kv"><span class="lbl">Total Liabilities</span><span class="val">${fm(bs.totalLiabs)}</span></div>
+        <div class="kv"><span class="lbl">Equity</span><span class="val">${fm(bs.totalEquity)}</span></div>
+        <div class="kv"><span class="lbl">YTD Revenue</span><span class="val">${fm(plYtd.revenue)}</span></div>
+        <div class="kv"><span class="lbl">YTD Net Income</span><span class="val ${plYtd.netIncome<0?'neg':'pos'}">${fm(plYtd.netIncome)}</span></div>
+        <div class="kv"><span class="lbl">Employees</span><span class="val">${e.employees.length}</span></div>
+        <div class="kv"><span class="lbl">Customers</span><span class="val">${e.customers.filter(c=>c.status==='active').length}</span></div>
+      </div>
+    </div>`;
+  }
+  return html;
+}
+
+// ── Finance ─────────────────────────────────────
+function renderFinance(){
+  if(!S.selectedEntity) S.selectedEntity = opcos()[0]?.id || holding()?.id;
+  const e = getEntity(S.selectedEntity);
+  if(!e) return '<div class="empty">No entity selected.</div>';
+
+  let html = `<h1>Financials</h1><div class="subtitle">Select an entity to view its statements.</div>`;
+
+  html += `<div class="form-row"><label>Entity</label><select id="finEntity">`;
+  for(const ent of S.entities){
+    html += `<option value="${ent.id}" ${ent.id===e.id?'selected':''}>${esc(ent.name)}</option>`;
+  }
+  html += `</select></div>`;
+
+  html += `<div class="tabs">
+    <button class="tab ${S.finTab==='pl'?'active':''}" data-fintab="pl">Income Statement</button>
+    <button class="tab ${S.finTab==='bs'?'active':''}" data-fintab="bs">Balance Sheet</button>
+    <button class="tab ${S.finTab==='cf'?'active':''}" data-fintab="cf">Cash Flow</button>
+    <button class="tab ${S.finTab==='gl'?'active':''}" data-fintab="gl">General Ledger</button>
+  </div>`;
+
+  if(S.finTab === 'pl'){
+    const fromYTD = {y:S.date.y, m:1, d:1};
+    const plYTD = getPL(e, fromYTD, S.date);
+    const fromMonth = {y:S.date.y, m:S.date.m, d:1};
+    const plMonth = getPL(e, fromMonth, S.date);
+    html += renderPL(e, plMonth, plYTD);
+  } else if(S.finTab === 'bs'){
+    html += renderBS(e);
+  } else if(S.finTab === 'cf'){
+    html += renderCF(e);
+  } else if(S.finTab === 'gl'){
+    html += renderGL(e);
+  }
+  return html;
+}
+
+function renderPL(e, month, ytd){
+  const rows = [
+    {label:'Revenue', code:'4000', rev:true},
+    {label:'Dividend Income', code:'4100', rev:true},
+    {label:'— Cost of Goods Sold', code:'5000'},
+    {label:'— Salaries', code:'6000'},
+    {label:'— Payroll Taxes', code:'6600'},
+    {label:'— Rent', code:'6100'},
+    {label:'— Utilities', code:'6200'},
+    {label:'— Marketing', code:'6300'},
+    {label:'— Professional Fees', code:'6400'},
+    {label:'— Depreciation', code:'6500'},
+    {label:'— Interest Expense', code:'7000'},
+    {label:'— Income Tax', code:'8000'},
+  ];
+  function val(pl, code){
+    if(code==='4000') return pl.revenue;
+    if(code==='5000') return pl.cogs;
+    return pl.opex[code] || 0;
+  }
+  let html = `<div class="stmt">
+    <div class="stmt-head">
+      <div class="stmt-title">Income Statement — ${esc(e.name)}</div>
+      <div class="stmt-sub">Period ending ${fmtDateMed(S.date)}</div>
+    </div>
+    <table>
+      <thead><tr><th></th><th class="num">Current Month</th><th class="num">Year to Date</th></tr></thead>
+      <tbody>`;
+  for(const r of rows){
+    const mv = val(month, r.code);
+    const yv = val(ytd, r.code);
+    if(mv === 0 && yv === 0) continue;
+    const label = r.rev ? r.label : r.label;
+    const cls = r.rev ? '' : '';
+    html += `<tr><td class="${cls}">${label}</td><td class="num">${fm(mv)}</td><td class="num">${fm(yv)}</td></tr>`;
+  }
+  const nIM = month.netIncome, nIY = ytd.netIncome;
+  html += `<tr class="total"><td>Net Income</td><td class="num ${nIM<0?'red':'green'}">${fm(nIM)}</td><td class="num ${nIY<0?'red':'green'}">${fm(nIY)}</td></tr>`;
+  html += `</tbody></table></div>`;
+  return html;
+}
+
+function renderBS(e){
+  const bs = getBS(e, S.date);
+  let html = `<div class="stmt">
+    <div class="stmt-head">
+      <div class="stmt-title">Balance Sheet — ${esc(e.name)}</div>
+      <div class="stmt-sub">As of ${fmtDateMed(S.date)}</div>
+    </div>
+    <div class="stmt-section">Assets</div><table><tbody>`;
+  const assetLabels = {
+    '1000':'Cash','1100':'Accounts Receivable','1200':'Inventory',
+    '1400':'Investment in Subsidiaries','1500':'Equipment','1510':'Less: Accumulated Depreciation'
+  };
+  for(const code of ['1000','1100','1200','1400','1500','1510']){
+    const v = bs.assets[code];
+    if(v === 0) continue;
+    html += `<tr><td>${assetLabels[code]}</td><td class="num">${fm(v)}</td></tr>`;
+  }
+  html += `<tr class="subtotal"><td>Total Assets</td><td class="num">${fm(bs.totalAssets)}</td></tr>`;
+  html += `</tbody></table>`;
+
+  html += `<div class="stmt-section">Liabilities</div><table><tbody>`;
+  const liabLabels = {'2000':'Accounts Payable','2200':'Bank Loans'};
+  for(const code of ['2000','2200']){
+    const v = bs.liabs[code];
+    if(v === 0) continue;
+    html += `<tr><td>${liabLabels[code]}</td><td class="num">${fm(v)}</td></tr>`;
+  }
+  html += `<tr class="subtotal"><td>Total Liabilities</td><td class="num">${fm(bs.totalLiabs)}</td></tr></tbody></table>`;
+
+  html += `<div class="stmt-section">Equity</div><table><tbody>
+    <tr><td>Common Stock</td><td class="num">${fm(bs.commonStock)}</td></tr>
+    <tr><td>Retained Earnings</td><td class="num">${fm(bs.retained)}</td></tr>
+    <tr class="subtotal"><td>Total Equity</td><td class="num">${fm(bs.totalEquity)}</td></tr>
+    <tr class="total"><td>Total Liabilities & Equity</td><td class="num">${fm(bs.totalLiabs + bs.totalEquity)}</td></tr>
+  </tbody></table></div>`;
+  return html;
+}
+
+function renderCF(e){
+  const from = {y:S.date.y, m:S.date.m, d:1};
+  const fromYTD = {y:S.date.y, m:1, d:1};
+
+  // Simplified cash flow
+  let opening = 0, closing = entityCash(e);
+  // Opening = balance at start of month = closing minus net change
+  for(const je of e.ledger){
+    if(dateLT(je.date, from)) {
+      for(const l of je.lines) if(l.account==='1000') opening += (l.debit||0)-(l.credit||0);
+    }
+  }
+  const netChange = closing - opening;
+
+  // Categorize entries
+  let operating = 0, investing = 0, financing = 0;
+  for(const je of e.ledger){
+    if(!dateGE(je.date, from) || !dateLE(je.date, S.date)) continue;
+    for(const l of je.lines){
+      if(l.account !== '1000') continue;
+      const amt = (l.debit||0) - (l.credit||0);
+      // Determine category by looking at other lines
+      const otherAccts = je.lines.filter(x=>x.account!=='1000').map(x=>x.account);
+      if(otherAccts.some(a=>['1400','1500','1510'].includes(a))) investing += amt;
+      else if(otherAccts.some(a=>['2200','3000','3200'].includes(a))) financing += amt;
+      else operating += amt;
+    }
+  }
+
+  let html = `<div class="stmt">
+    <div class="stmt-head">
+      <div class="stmt-title">Cash Flow Statement — ${esc(e.name)}</div>
+      <div class="stmt-sub">For the month ending ${fmtDateMed(S.date)}</div>
+    </div>
+    <table><tbody>
+      <tr><td>Opening Cash</td><td class="num">${fm(opening)}</td></tr>
+      <tr class="subtotal"><td>Net Cash from Operating Activities</td><td class="num ${operating<0?'red':''}">${fm(operating)}</td></tr>
+      <tr class="subtotal"><td>Net Cash from Investing Activities</td><td class="num ${investing<0?'red':''}">${fm(investing)}</td></tr>
+      <tr class="subtotal"><td>Net Cash from Financing Activities</td><td class="num ${financing<0?'red':''}">${fm(financing)}</td></tr>
+      <tr class="total"><td>Net Change in Cash</td><td class="num ${netChange<0?'red':'green'}">${fm(netChange)}</td></tr>
+      <tr class="total"><td>Closing Cash</td><td class="num">${fm(closing)}</td></tr>
+    </tbody></table></div>`;
+  return html;
+}
+
+function renderGL(e){
+  const entries = [...e.ledger].reverse().slice(0, 30);
+  let html = `<div class="stmt" style="max-width:100%">
+    <div class="stmt-head">
+      <div class="stmt-title">General Ledger — ${esc(e.name)}</div>
+      <div class="stmt-sub">Last ${entries.length} entries</div>
+    </div>
+    <table>
+      <thead><tr><th>Date</th><th>Memo</th><th>Account</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead>
+      <tbody>`;
+  for(const je of entries){
+    let first = true;
+    for(const l of je.lines){
+      html += `<tr>
+        <td class="mono" style="font-size:11px">${first ? fmtDateShort(je.date) : ''}</td>
+        <td style="font-size:11px">${first ? esc(je.memo) : ''}</td>
+        <td class="mono" style="font-size:11px">${l.account} ${ACC[l.account]?.name||''}</td>
+        <td class="num">${l.debit ? fm(l.debit) : ''}</td>
+        <td class="num">${l.credit ? fm(l.credit) : ''}</td>
+      </tr>`;
+      first = false;
+    }
+  }
+  html += `</tbody></table></div>`;
+  return html;
+}
+
+// ── People ──────────────────────────────────────
+function renderPeople(){
+  if(!S.peopleEntity) S.peopleEntity = opcos()[0]?.id;
+  const e = getEntity(S.peopleEntity);
+  let html = `<h1>People</h1><div class="subtitle">Employee roster across the group.</div>`;
+
+  html += `<div class="form-row"><label>Entity</label><select id="peopleEntity">`;
+  for(const ent of opcos()){
+    html += `<option value="${ent.id}" ${ent.id===e?.id?'selected':''}>${esc(ent.name)}</option>`;
+  }
+  html += `</select></div>`;
+
+  if(!e) return html + '<div class="empty">No operating company.</div>';
+
+  if(e.simplified){
+    html += `<div class="empty">${esc(e.name)} is a simplified holding — employee details are managed at group level.</div>`;
+    return html;
+  }
+
+  const totalSalary = e.employees.reduce((s,x)=>s+x.salary,0);
+  const monthly = Math.round(totalSalary/12);
+  const monthlyTax = Math.round(monthly*0.25);
+
+  html += `<div class="card"><div class="kv-grid">
+    <div class="kv"><span class="lbl">Headcount</span><span class="val">${e.employees.length}</span></div>
+    <div class="kv"><span class="lbl">Annual Salaries</span><span class="val">${fm(totalSalary)}</span></div>
+    <div class="kv"><span class="lbl">Monthly Payroll</span><span class="val">${fm(monthly)}</span></div>
+    <div class="kv"><span class="lbl">Monthly Taxes (25%)</span><span class="val">${fm(monthlyTax)}</span></div>
+    <div class="kv"><span class="lbl">Total Monthly Cost</span><span class="val">${fm(monthly+monthlyTax)}</span></div>
+  </div></div>`;
+
+  html += `<h2>Employees</h2>
+    <table>
+      <thead><tr><th>Name</th><th>Role</th><th class="num">Annual Salary</th><th>Start Date</th><th></th></tr></thead>
+      <tbody>`;
+  if(e.employees.length === 0){
+    html += `<tr><td colspan="5" style="text-align:center;padding:20px;color:#8b919a">No employees.</td></tr>`;
+  } else {
+    for(const emp of e.employees){
+      html += `<tr>
+        <td>${esc(emp.name)}</td>
+        <td>${esc(emp.role)}</td>
+        <td class="num">${fm(emp.salary)}</td>
+        <td class="mono" style="font-size:11px">${fmtDateMed(emp.startDate)}</td>
+        <td><button class="sm danger" data-fire="${emp.id}" data-entity="${e.id}">Terminate</button></td>
+      </tr>`;
+    }
+  }
+  html += `</tbody></table>`;
+
+  html += `<h2>Hire</h2>
+    <div class="form-row">
+      <label>Role</label>
+      <select id="hireRole">`;
+  for(const [role, salary] of Object.entries(ROLES)){
+    html += `<option value="${role}">${role} — ${fm(salary)}/yr</option>`;
+  }
+  html += `</select>
+      <button class="primary" data-hire="${e.id}">Hire</button>
+    </div>`;
+
+  return html;
+}
+
+// ── Inbox ───────────────────────────────────────
+function renderInbox(){
+  let html = `<h1>Inbox</h1><div class="subtitle">${S.docs.filter(d=>!d.resolved).length} open documents</div>`;
+  const open = S.docs.filter(d=>!d.resolved);
+  if(open.length === 0){
+    html += '<div class="empty">No open documents.</div>';
+  } else {
+    for(const d of open){
+      let cls = 'doc';
+      if(d.unread) cls += ' unread';
+      if(d.kind === 'warn' || d.kind === 'decision') cls += ' ' + (d.kind === 'decision' ? 'decision' : 'warn');
+      html += `<div class="${cls}">
+        <div class="doc-head">
+          <div>
+            <div class="doc-type">${esc(d.type)}</div>
+            <div class="doc-title">${esc(d.title)}</div>
+          </div>
+          <div class="doc-date">${fmtDateMed(d.date)}</div>
+        </div>
+        <div class="doc-body">${d.body.replace(/\n/g,'<br>')}</div>`;
+      if(d.options && d.options.length){
+        html += `<div class="doc-actions">`;
+        for(const o of d.options){
+          html += `<button class="sm ${o.action==='dismiss-doc'?'':'primary'}" data-doc-action="${o.action}" data-doc-id="${d.id}" data-entity="${o.entityId||''}" data-amount="${o.amount||0}">${esc(o.label)}</button>`;
+        }
+        html += `</div>`;
+      } else {
+        html += `<div class="doc-actions"><button class="sm" data-doc-action="dismiss-doc" data-doc-id="${d.id}">Dismiss</button></div>`;
+      }
+      html += `</div>`;
+    }
+  }
+  return html;
+}
+
+// ── Market ──────────────────────────────────────
+function renderMarket(){
+  const hc = holding();
+  const cash = entityCash(hc);
+  let html = `<h1>Capital Markets</h1><div class="subtitle">Acquisitions, financing, and new company formation.</div>`;
+
+  html += `<div class="card"><div class="kv-grid">
+    <div class="kv"><span class="lbl">HoldCo Cash</span><span class="val">${fm(cash)}</span></div>
+    <div class="kv"><span class="lbl">Group Cash</span><span class="val">${fm(groupCash())}</span></div>
+    <div class="kv"><span class="lbl">Bank Rate</span><span class="val">8.0%</span></div>
+  </div></div>`;
+
+  html += `<h2>Acquisition Targets</h2>`;
+  for(let i=0; i<MARKET.targets.length; i++){
+    const t = MARKET.targets[i];
+    if(t.acquired){
+      html += `<div class="doc" style="opacity:.55"><div class="doc-head"><div><div class="doc-title">${esc(t.name)}</div></div><span class="pill green">Acquired</span></div></div>`;
+      continue;
+    }
+    const monthlyNet = t.monthlyRevenue - t.monthlyCosts;
+    const annualNet = monthlyNet * 12;
+    const multiple = (t.price / annualNet).toFixed(1);
+    const canAfford = cash >= t.price;
+    html += `<div class="card">
+      <div class="flex-between">
+        <div>
+          <div style="font-weight:700;font-size:13.5px">${esc(t.name)}</div>
+          <div class="dim" style="font-size:11.5px;margin-top:2px">${esc(t.description)}</div>
+        </div>
+        <span class="tag opco">${esc(t.industry)}</span>
+      </div>
+      <div class="kv-grid" style="margin-top:12px">
+        <div class="kv"><span class="lbl">Asking Price</span><span class="val">${fm(t.price)}</span></div>
+        <div class="kv"><span class="lbl">Monthly Rev</span><span class="val">${fm(t.monthlyRevenue)}</span></div>
+        <div class="kv"><span class="lbl">Monthly Net</span><span class="val ${monthlyNet<0?'neg':'pos'}">${fm(monthlyNet)}</span></div>
+        <div class="kv"><span class="lbl">Multiple</span><span class="val">${multiple}×</span></div>
+      </div>
+      <div style="margin-top:12px">
+        <button class="${canAfford?'primary':''}" data-acquire="${i}" ${canAfford?'':'disabled'}>${canAfford ? 'Acquire' : 'Insufficient cash'}</button>
+      </div>
+    </div>`;
+  }
+
+  html += `<h2>Found New Company</h2>
+    <div class="card">
+      <div class="kv-grid">
+        <div class="kv"><span class="lbl">Meridian Café</span><span class="val">$150,000</span></div>
+        <div class="kv"><span class="lbl">Setup Cost</span><span class="val">$150,000</span></div>
+        <div class="kv"><span class="lbl">Monthly Rev</span><span class="val">$30,000</span></div>
+        <div class="kv"><span class="lbl">Monthly Net</span><span class="val green">$6,000</span></div>
+      </div>
+      <div style="margin-top:10px"><button data-found="cafe" ${cash>=150000?'primary':''} ${cash>=150000?'':'disabled'}>Found Café</button></div>
+    </div>
+    <div class="card">
+      <div class="kv-grid">
+        <div class="kv"><span class="lbl">Meridian Consulting</span><span class="val">$50,000</span></div>
+        <div class="kv"><span class="lbl">Setup Cost</span><span class="val">$50,000</span></div>
+        <div class="kv"><span class="lbl">Monthly Rev</span><span class="val">$18,000</span></div>
+        <div class="kv"><span class="lbl">Monthly Net</span><span class="val green">$4,000</span></div>
+      </div>
+      <div style="margin-top:10px"><button data-found="consulting" ${cash>=50000?'primary':''} ${cash>=50000?'':'disabled'}>Found Consulting</button></div>
+    </div>
+
+    <h2>Financing</h2>
+    <div class="card">
+      <div class="form-row">
+        <label>Bank Loan (8%)</label>
+        <button data-loan="${hc.id}" data-amount="250000" class="primary" ${cash>=0?'':'disabled'}>Borrow $250,000</button>
+        <button data-loan="${hc.id}" data-amount="100000" ${cash>=0?'':'disabled'}>Borrow $100,000</button>
+      </div>
+      <div class="dim" style="font-size:11.5px;margin-top:8px">Loans post to the balance sheet as liabilities. Interest accrues monthly.</div>
+    </div>`;
+
+  return html;
+}
+
+// ── Actions ────────────────────────────────────
+function renderActions(){
+  const op = opcos()[0];
+  if(!op) return '<div class="empty">No operating company.</div>';
+
+  let html = `<h1>Actions</h1><div class="subtitle">Operating decisions for ${esc(op.name)}.</div>`;
+
+  html += `<div class="card">
+    <div class="card-title">Sales & Marketing</div>
+    <div class="form-row">
+      <button class="primary" data-sales="${op.id}">Run Sales Push — $4,000</button>
+    </div>
+    <div class="dim" style="font-size:11.5px;margin-top:6px">Costs $4,000, with a chance (based on sales headcount) of landing a new wholesale account worth $4k–$16k/month.</div>
+  </div>`;
+
+  html += `<div class="card">
+    <div class="card-title">Dividends</div>
+    <div class="form-row">
+      <button data-dividend="${op.id}" data-amount="10000">Pay $10,000 to parent</button>
+      <button data-dividend="${op.id}" data-amount="25000">Pay $25,000</button>
+      <button data-dividend="${op.id}" data-amount="50000">Pay $50,000</button>
+    </div>
+    <div class="dim" style="font-size:11.5px;margin-top:6px">Transfers cash from OpCo to HoldCo. Recorded as a dividend, reducing retained earnings.</div>
+  </div>`;
+
+  html += `<div class="card">
+    <div class="card-title">Quick Stats</div>
+    <div class="kv-grid">
+      <div class="kv"><span class="lbl">Cash</span><span class="val">${fm(entityCash(op))}</span></div>
+      <div class="kv"><span class="lbl">Active Customers</span><span class="val">${op.customers.filter(c=>c.status==='active').length}</span></div>
+      <div class="kv"><span class="lbl">Employees</span><span class="val">${op.employees.length}</span></div>
+      <div class="kv"><span class="lbl">Open AR</span><span class="val">${fm(op.ar.filter(x=>x.status==='open').reduce((s,x)=>s+x.amount,0))}</span></div>
+    </div>
+  </div>`;
+
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  EVENT BINDING
+// ═══════════════════════════════════════════════════════════════
+function bindEvents(){
+  // Entity click
+  document.querySelectorAll('[data-entity]').forEach(el => {
+    el.addEventListener('click', () => {
+      S.selectedEntity = el.dataset.entity;
+      S.screen = 'finance';
+      S.finTab = 'pl';
+      render();
+    });
+  });
+
+  // Screen nav
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      S.screen = b.dataset.screen;
+      document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      render();
+    });
+  });
+
+  // Finance entity selector
+  const finSel = document.getElementById('finEntity');
+  if(finSel) finSel.addEventListener('change', () => {
+    S.selectedEntity = finSel.value;
+    render();
+  });
+
+  // Finance tabs
+  document.querySelectorAll('[data-fintab]').forEach(t => {
+    t.addEventListener('click', () => {
+      S.finTab = t.dataset.fintab;
+      render();
+    });
+  });
+
+  // People entity selector
+  const pSel = document.getElementById('peopleEntity');
+  if(pSel) pSel.addEventListener('change', () => {
+    S.peopleEntity = pSel.value;
+    render();
+  });
+
+  // Hire
+  const hireBtn = document.querySelector('[data-hire]');
+  if(hireBtn){
+    hireBtn.addEventListener('click', () => {
+      const role = document.getElementById('hireRole').value;
+      hireEmployee(hireBtn.dataset.hire, role);
+    });
+  }
+
+  // Fire
+  document.querySelectorAll('[data-fire]').forEach(b => {
+    b.addEventListener('click', () => {
+      if(confirm('Terminate this employee? Severance: one month salary.')){
+        fireEmployee(b.dataset.entity, b.dataset.fire);
+      }
+    });
+  });
+
+  // Doc actions
+  document.querySelectorAll('[data-doc-action]').forEach(b => {
+    b.addEventListener('click', () => {
+      const action = b.dataset.docAction;
+      const docId = b.dataset.docId;
+      const doc = S.docs.find(d => d.id === docId);
+      if(!doc) return;
+      if(action === 'dismiss-doc'){
+        doc.resolved = true;
+        doc.unread = false;
+      } else if(action === 'rescue-payroll'){
+        const ent = getEntity(b.dataset.entity);
+        const hc = holding();
+        const amt = parseInt(b.dataset.amount);
+        if(entityCash(hc) >= amt){
+          post(hc, 'Intercompany transfer — payroll rescue', [
+            {account:'1400', debit:amt},
+            {account:'1000', credit:amt},
+          ]);
+          post(ent, 'Capital injection from parent', [
+            {account:'1000', debit:amt},
+            {account:'3000', credit:amt},
+          ]);
+          addFeed('Payroll rescued via HoldCo transfer', 'good');
+        } else {
+          addFeed('HoldCo also has insufficient cash', 'warn');
+        }
+        doc.resolved = true;
+      } else if(action === 'defer-payroll'){
+        doc.resolved = true;
+        addFeed('Payroll deferred — employee relations will suffer', 'warn');
+      }
+      render();
+    });
+  });
+
+  // Acquire
+  document.querySelectorAll('[data-acquire]').forEach(b => {
+    b.addEventListener('click', () => {
+      acquireCompany(parseInt(b.dataset.acquire));
+    });
+  });
+
+  // Found
+  document.querySelectorAll('[data-found]').forEach(b => {
+    b.addEventListener('click', () => {
+      foundCompany(b.dataset.found);
+    });
+  });
+
+  // Loan
+  document.querySelectorAll('[data-loan]').forEach(b => {
+    b.addEventListener('click', () => {
+      takeLoan(b.dataset.loan, parseInt(b.dataset.amount));
+    });
+  });
+
+  // Sales push
+  document.querySelectorAll('[data-sales]').forEach(b => {
+    b.addEventListener('click', () => {
+      runSalesPush(b.dataset.sales);
+    });
+  });
+
+  // Dividend
+  document.querySelectorAll('[data-dividend]').forEach(b => {
+    b.addEventListener('click', () => {
+      payDividend(b.dataset.dividend, parseInt(b.dataset.amount));
+    });
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TOP BAR CONTROLS
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('bDay').addEventListener('click', () => {
+  if(S.gameOver) return;
+  tickDay();
+});
+document.getElementById('bWeek').addEventListener('click', () => {
+  if(S.gameOver) return;
+  for(let i=0; i<5; i++) tickDay();
+});
+document.getElementById('bMonth').addEventListener('click', () => {
+  if(S.gameOver) return;
+  for(let i=0; i<21; i++){
+    if(S.gameOver) break;
+    tickDay();
+  }
+});
+document.getElementById('bAuto').addEventListener('click', () => {
+  if(S.gameOver) return;
+  if(S.autoTimer){
+    clearInterval(S.autoTimer);
+    S.autoTimer = null;
+    document.getElementById('bAuto').textContent = '▶ Auto';
+    document.getElementById('bAuto').classList.add('primary');
+  } else {
+    document.getElementById('bAuto').textContent = '⏸ Pause';
+    document.getElementById('bAuto').classList.remove('primary');
+    S.autoTimer = setInterval(() => {
+      if(S.gameOver){ clearInterval(S.autoTimer); return; }
+      tickDay();
+    }, 220);
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════
+//  BOOT
+// ═══════════════════════════════════════════════════════════════
+setupCompany();
+render();
+
+})();
+</script>
+</body>
+</html>
